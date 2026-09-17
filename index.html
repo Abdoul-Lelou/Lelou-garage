@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facturation - Lelou Prestation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    /* Forcer le format A4 exact pour la facture pour un rendu identique sur PC et Mobile */
+    .a4-page {
+      width: 794px;
+      min-height: 1123px;
+      padding: 40px;
+      background: white;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .no-print { display: none !important; }
+      .a4-page { shadow: none; margin: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body class="bg-gray-200 p-2 md:p-6">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- FORMULAIRE DE SAISIE COMPLET -->
+    <div class="no-print bg-white p-4 md:p-6 rounded-lg shadow-md">
+      <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Informations de la facture</h2>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">N° Facture</label>
+          <input type="text" id="inNum" value="48" class="w-full border p-2 rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Code Client</label>
+          <input type="text" id="inCodeCli" value="C0037" class="w-full border p-2 rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Date de Facturation</label>
+          <input type="text" id="inDate" value="27/08/26" class="w-full border p-2 rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Date d'échéance</label>
+          <input type="text" id="inDueDate" value="27/08/26" class="w-full border p-2 rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Nom Client</label>
+          <input type="text" id="cliName" value="Boubacar Barry" class="w-full border p-2 rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Téléphone Client</label>
+          <input type="text" id="cliPhone" value="+224626663478" class="w-full border p-2 rounded text-sm">
+        </div>
+      </div>
+
+      <!-- AJOUT D'ARTICLE -->
+      <div class="bg-gray-50 p-3 rounded border mb-4">
+        <h3 class="font-bold text-sm mb-2">Ajouter un article / pièce</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="itemDesc" placeholder="Désignation (ex: Filtre a Huile)" class="border p-2 rounded text-sm">
+          <input type="number" id="itemPrice" placeholder="Prix unitaire (GNF)" class="border p-2 rounded text-sm">
+          <div class="flex gap-2">
+            <input type="number" id="itemQty" value="1" class="w-20 border p-2 rounded text-sm">
+            <button type="button" onclick="addItem()" class="flex-1 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 text-sm">Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="downloadPDF()" class="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700">
+        📄 Télécharger la Facture en PDF
+      </button>
+    </div>
+
+    <!-- PREVISUALISATION FACTURE (AFFAICHAGE IDENTIQUE A4) -->
+    <div class="overflow-x-auto flex justify-center">
+      <div class="a4-page shadow-2xl relative flex flex-col justify-between" id="invoice">
+        
+        <div>
+          <!-- EN-TÊTE -->
+          <div class="flex justify-between items-start mb-6">
+            <div class="flex items-center gap-3">
+              <img src="logo.png" alt="LELOU GARAGE" class="w-24 h-auto object-contain">
+              <div>
+                <h1 class="font-bold text-lg leading-tight">LELOU PRESTATION</h1>
+                <p class="text-xs text-gray-600">AFRICOF T7 C/SONFONIA</p>
+                <p class="text-xs text-gray-600">lelouprestationservice@gmail.com</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <h2 class="text-2xl font-bold tracking-wide">Facture</h2>
+              <p class="text-sm font-semibold">N° : <span id="outNum">48</span></p>
+              <p class="text-xs text-gray-600">Réf. :</p>
+              <p class="text-xs text-gray-600">Date facturation : <span id="outDate">27/08/26</span></p>
+              <p class="text-xs text-gray-600">Date échéance : <span id="outDueDate">27/08/26</span></p>
+            </div>
+          </div>
+
+          <!-- BLOC CLIENT / EMETTEUR -->
+          <div class="grid grid-cols-2 gap-4 bg-gray-100/70 p-3 rounded mb-4 text-xs">
+            <div>
+              <p class="font-bold text-gray-500 uppercase text-[10px]">Emetteur</p>
+              <p class="font-bold">LELOU PRESTATION</p>
+              <p>AFRICOF T7 C/SONFONIA</p>
+              <p>lelouprestationservice@gmail.com</p>
+            </div>
+            <div>
+              <p class="font-bold text-gray-500 uppercase text-[10px]">Adressé à</p>
+              <p class="font-bold" id="outCliName">Boubacar Barry</p>
+              <p id="outCliPhone">+224626663478</p>
+              <p>Code client : <span id="outCodeCli">C0037</span></p>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-gray-500 italic mb-2">Montants exprimés en Guinea Franc</p>
+
+          <!-- TABLEAU DES ARTICLES -->
+          <table class="w-full text-left border-collapse text-xs mb-4">
+            <thead>
+              <tr class="bg-gray-200 text-gray-700">
+                <th class="p-2 border">Désignation</th>
+                <th class="p-2 border text-center">TVA</th>
+                <th class="p-2 border text-right">Px unitaire</th>
+                <th class="p-2 border text-center">Qté</th>
+                <th class="p-2 border text-right">Total HT</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTable">
+              <!-- Injecté via JS -->
+            </tbody>
+          </table>
+
+          <!-- CONDITIONS ET TOTAL -->
+          <div class="flex justify-between items-start text-xs mt-4">
+            <div class="space-y-1 text-gray-600 w-1/2">
+              <p><b>Conditions de règlement :</b> A réception</p>
+              <p><b>Mode de règlement :</b> Conditions de paiement tiers</p>
+            </div>
+            <div class="w-5/12 space-y-1 text-right">
+              <div class="flex justify-between py-1 border-b">
+                <span class="font-semibold">Total HT</span>
+                <span id="totalHT" class="font-bold">0</span>
+              </div>
+              <div class="flex justify-between py-1 text-sm font-bold border-b">
+                <span>Total TTC</span>
+                <span id="totalTTC">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COORDONNÉES BANCAIRES ET REGLEMENT -->
+          <div class="mt-6 border-t pt-3 text-[11px] text-gray-600 grid grid-cols-2 gap-2">
+            <div>
+              <p><b>Référence bancaire :</b></p>
+              <p><b>Nom du compte :</b></p>
+              <p><b>Code SWIFT :</b></p>
+            </div>
+            <div>
+              <p><b>Numéro de compte :</b></p>
+              <p><b>Affaire suivie par :</b></p>
+              <p><b>Tel :</b></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PIED DE PAGE STRICT (IDENTIQUE PDF) -->
+        <div class="border-t pt-3 text-center text-[10px] text-gray-500 mt-8">
+          <p><b>Siège social:</b> LELOU PRESTATION - Sonfonia Africof T7, commune de Sonfonia Conakry, Guinée</p>
+          <p><b>Téléphone:</b> +224 623 15 71 18 - <b>Email:</b> lelouprestationservice@gmail.com</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Chargement des données exactes du PDF d'origine
+    let items = [
+      { desc: "Segment", price: 600000, qty: 1 },
+      { desc: "Pochette de joint", price: 550000, qty: 1 },
+      { desc: "Coussinet de bielle et de palier", price: 620000, qty: 1 },
+      { desc: "Pompe a Huile", price: 1400000, qty: 1 },
+      { desc: "Pompe a eau", price: 250000, qty: 1 },
+      { desc: "Tandeur", price: 120000, qty: 1 },
+      { desc: "Chqine", price: 255000, qty: 1 },
+      { desc: "Glisseur", price: 200000, qty: 1 },
+      { desc: "Filtre a Huile", price: 2500, qty: 1 },
+      { desc: "Huille Moteur", price: 340000, qty: 1 },
+      { desc: "Essance", price: 360000, qty: 1 },
+      { desc: "Colle", price: 40000, qty: 1 },
+      { desc: "Demareure", price: 560000, qty: 1 },
+      { desc: "Main d'oeuvre mecanique", price: 1200000, qty: 1 }
+    ];
+
+    function formatGNF(val) {
+      return val.toLocaleString('fr-FR') + ' GNF';
+    }
+
+    function renderInvoice() {
+      document.getElementById('outNum').innerText = document.getElementById('inNum').value;
+      document.getElementById('outCodeCli').innerText = document.getElementById('inCodeCli').value;
+      document.getElementById('outDate').innerText = document.getElementById('inDate').value;
+      document.getElementById('outDueDate').innerText = document.getElementById('inDueDate').value;
+      document.getElementById('outCliName').innerText = document.getElementById('cliName').value;
+      document.getElementById('outCliPhone').innerText = document.getElementById('cliPhone').value;
+
+      const tbody = document.getElementById('itemsTable');
+      tbody.innerHTML = '';
+      let grandTotal = 0;
+
+      items.forEach((item) => {
+        const total = item.price * item.qty;
+        grandTotal += total;
+
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="p-1.5 border">${item.desc}</td>
+            <td class="p-1.5 border text-center">%</td>
+            <td class="p-1.5 border text-right">${item.price.toLocaleString('fr-FR')},00</td>
+            <td class="p-1.5 border text-center">${item.qty},00</td>
+            <td class="p-1.5 border text-right font-medium">${total.toLocaleString('fr-FR')}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('totalHT').innerText = formatGNF(grandTotal);
+      document.getElementById('totalTTC').innerText = formatGNF(grandTotal);
+    }
+
+    function addItem() {
+      const desc = document.getElementById('itemDesc').value;
+      const price = parseFloat(document.getElementById('itemPrice').value);
+      const qty = parseInt(document.getElementById('itemQty').value);
+
+      if (desc && !isNaN(price) && !isNaN(qty)) {
+        items.push({ desc, price, qty });
+        renderInvoice();
+        document.getElementById('itemDesc').value = '';
+        document.getElementById('itemPrice').value = '';
+      }
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('invoice');
+      const opt = {
+        margin:       0,
+        filename:     'Facture_48_Lelou_Prestation.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, scrollX: 0, scrollY: 0 },
+        jsPDF:        { unit: 'pt', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', renderInvoice);
+    });
+
+    renderInvoice();
+  </script>
+</body>
+</html>
